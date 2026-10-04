@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Data Extractor</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="popup-container">
+        <!-- Header and Status Card -->
+        <header class="header">
+            <div class="logo-area">
+                <img src="../icons/icon32.png" alt="Logo" class="popup-logo" />
+                <span class="badge">MV3</span>
+                <h2>Table Data Extractor</h2>
+            </div>
+            <p class="subtitle">Extract selected rows and columns from table</p>
+        </header>
+
+        <!-- Live Status and Row Count -->
+        <section class="status-card" id="status-card">
+            <div class="status-indicator">
+                <span class="dot" id="status-dot"></span>
+                <span id="status-text">Searching for table...</span>
+            </div>
+            <div class="row-stats">
+                <span class="count-badge" id="selected-row-count">0</span>
+                <span class="label">Rows Selected</span>
+            </div>
+        </section>
+
+        <!-- Quick Row Actions -->
+        <div class="quick-actions">
+            <button id="btn-select-all-rows" class="btn-subtle" title="Select all rows in table">
+                Select All Rows
+            </button>
+            <button id="btn-deselect-all-rows" class="btn-subtle" title="Deselect all rows">
+                Deselect All
+            </button>
+        </div>
+
+        <!-- Column Selection Section -->
+        <section class="section column-section">
+            <div class="section-header">
+                <label class="section-title">Columns to Include</label>
+                <div class="section-controls">
+                    <button id="btn-select-all-cols" class="btn-pill" title="Select all columns">✓ All</button>
+                    <button id="btn-clear-cols" class="btn-pill" title="Clear column selection">✕ Clear</button>
+                </div>
+            </div>
+            <p class="section-hint">Selected columns will be included in the JSON output.</p>
+
+            <!-- Dynamically populated column checkboxes -->
+            <div class="columns-grid" id="columns-container">
+                <div class="loading-columns">Loading columns...</div>
+            </div>
+        </section>
+
+        <!-- Record / Package Title Input -->
+        <div class="package-name-container">
+            <label for="package-title-input" class="input-label">📦 Record / Package Name (Optional):</label>
+            <input type="text" id="package-title-input"
+                placeholder="e.g. Oncology Patient Group 1 (Defaults to timestamp)" maxlength="80" autocomplete="off" />
+        </div>
+
+        <!-- Inline Backend Setting Bar -->
+        <div class="backend-bar-container" id="backend-bar-container">
+            <!-- 1. View Mode -->
+            <div class="backend-bar-view" id="backend-bar-view" title="Click to edit backend URL">
+                <div class="backend-info-left">
+                    <span class="backend-icon">⚙️</span>
+                    <span class="backend-label">Target:</span>
+                    <span class="backend-url-text"
+                        id="backend-url-display">http://localhost:3000</span>
+                </div>
+                <button type="button" class="btn-edit-url" id="btn-edit-backend" title="Edit backend address">Edit
+                    ✎</button>
+            </div>
+
+            <!-- 2. Inline Edit Mode -->
+            <div class="backend-bar-edit hidden" id="backend-bar-edit">
+                <input type="text" id="backend-url-input" value="http://localhost:3000"
+                    placeholder="http://localhost:3000" />
+                <button type="button" id="btn-save-backend" class="btn-action-sm btn-save"
+                    title="Save this address permanently">Save</button>
+                <button type="button" id="btn-reset-backend" class="btn-action-sm btn-reset"
+                    title="Reset to default address">Reset</button>
+                <button type="button" id="btn-close-backend" class="btn-close-sm" title="Close">✕</button>
+            </div>
+        </div>
+
+        <!-- Main Action Buttons -->
+        <div class="action-area">
+            <button id="btn-extract" class="btn-outline" title="Preview data without sending to backend">
+                <span class="btn-icon">🔍</span>
+                <span>Extract Data</span>
+            </button>
+            <button id="btn-send-backend" class="btn-primary" title="Extract and send data directly to backend">
+                <span class="btn-icon">🚀</span>
+                <span>Send to Backend</span>
+            </button>
+        </div>
+
+        <!-- Notification Toast Area -->
+        <div id="alert-box" class="alert-box hidden"></div>
+
+        <!-- AI Assistant Section (Groq AI) -->
+        <section class="section ai-section" id="ai-section">
+            <div class="section-header">
+                <label class="section-title">🤖 AI Assistant (Groq GPT-OSS)</label>
+                <span class="ai-status-badge" id="ai-status-badge">Ready</span>
+            </div>
+            <div class="ai-chips-row">
+                <button type="button" class="ai-chip"
+                    data-prompt="Summarize the clinical significance and key findings of the selected data.">📋
+                    Summarize</button>
+                <button type="button" class="ai-chip"
+                    data-prompt="What are the critical disease risks or drug interactions in these records?">⚠️ Risk
+                    Assessment</button>
+                <button type="button" class="ai-chip"
+                    data-prompt="Explain the underlying biological pathways and mechanisms for these entries.">🧬
+                    Mechanisms</button>
+            </div>
+
+            <div class="ai-input-group">
+                <input type="text" id="ai-query-input" placeholder="Ask anything or analyze selected rows..."
+                    maxlength="200" autocomplete="off" />
+                <button type="button" id="btn-ask-ai" class="btn-ai" title="Ask Groq AI">
+                    <span class="ai-btn-text">Ask AI</span>
+                </button>
+            </div>
+
+            <div id="ai-response-card" class="ai-response-card hidden">
+                <div class="ai-response-top">
+                    <span class="ai-model-tag">GPT-OSS 120B</span>
+                    <button type="button" id="btn-copy-ai" class="btn-pill" title="Copy response">Copy</button>
+                </div>
+                <div id="ai-response-content" class="ai-response-content"></div>
+            </div>
+        </section>
+
+        <!-- Results and Preview Section -->
+        <section id="results-section" class="section results-section hidden">
+            <div class="section-header">
+                <label class="section-title">
+                    Preview (<span id="result-count">0</span> records)
+                </label>
+                <div class="result-actions">
+                    <button id="btn-copy-json" class="btn-secondary" title="Copy JSON to clipboard">
+                        📋 Copy
+                    </button>
+                    <button id="btn-download-json" class="btn-secondary" title="Save as JSON file">
+                        💾 Download
+                    </button>
+                </div>
+            </div>
+            <div class="json-preview-container">
+                <pre id="json-preview"><code>[]</code></pre>
+            </div>
+        </section>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

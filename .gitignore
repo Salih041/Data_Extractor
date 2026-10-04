@@ -1,0 +1,28 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor & IDE directories
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Chrome Extension packages & private keys
+*.crx
+*.zip
+*.pem
+
+# Environment & local files
+.env
+.env.*
+*.local
+
+# Logs
+*.log
+npm-debug.log*
